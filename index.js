@@ -408,53 +408,15 @@ else if (comando === "proveedor") {
   return message.reply({ embeds: [embed] });
 }
 
-// ================== COMANDOS ==================
-if (comando === "valor") {
-  // --- tu código de valor ---
-}
-
-else if (comando === "reventa") {
-  // --- tu código de reventa ---
-}
-
-else if (comando === "eldorado") {
-  // --- tu código de eldorado ---
-}
-
-else if (comando === "proveedor") {
-  // --- tu código de proveedor ---
-}
-
-else if (comando === "comandos") {
-  const embed = new EmbedBuilder()
-    .setTitle("📜 Lista de comandos")
-    .setDescription("Estos son los comandos disponibles del bot:")
-    .addFields(
-      {
-        name: "📊 ,valor",
-        value: "` ,valor <personaje> <M>`\nEjemplo: `,valor sis 25`"
-      },
-      {
-        name: "💸 ,reventa",
-        value: "` ,reventa <compra> <venta>`"
-      },
-      {
-        name: "🧾 ,eldorado",
-        value: "` ,eldorado <precio>`"
-      },
-      {
-        name: "🏪 ,proveedor",
-        value: "` ,proveedor <precio> <porcentaje>`"
-      }
-    )
-    .setColor("Purple");
-
-  return message.reply({ embeds: [embed] });
-}
-
-else {
-  return message.reply("❌ Comando no reconocido. Usa `,comandos`");
-}
+/*
+COMANDOS DISPONIBLES:
+- ,valor <personaje> <M>
+- ,reventa <compra> <venta>
+- ,eldorado <precio>
+- ,proveedor <precio> <10|15|20>
+- ,comandos
+- ,c <1-100>
+*/
 
   // ================== COMANDO PURGE ==================
   if (comando === "c") {
@@ -477,6 +439,3 @@ else {
 
 // ================== LOGIN ==================
 client.login(token);
-
-
-
