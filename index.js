@@ -1,4 +1,9 @@
+// Capturar errores inesperados
+process.on("unhandledRejection", console.error);
+process.on("uncaughtException", console.error);
+
 console.log("🚀 BOT INICIANDO...");
+
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const token = process.env.TOKEN;
 
@@ -9,6 +14,7 @@ const client = new Client({
     GatewayIntentBits.MessageContent
   ]
 });
+
 
 // ================== PERSONAJES Y FÓRMULAS ================== 
 const personajes = {
