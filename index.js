@@ -24,15 +24,6 @@ const app = express();
 app.get("/", (req, res) => res.send("Bot activo!"));
 app.listen(3000, () => console.log("Servidor web iniciado en puerto 3000"));
 
-// ================== LOGIN ==================
-client.login(token);
-
-// ================== MINI SERVIDOR WEB ==================
-const app = express();
-app.get("/", (req, res) => res.send("Bot activo!"));
-app.listen(3000, () => console.log("Servidor web iniciado en puerto 3000"));
-
-
 // ================== PERSONAJES Y FÓRMULAS ================== 
 const personajes = {
   // Las sis
