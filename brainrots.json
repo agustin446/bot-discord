@@ -1,0 +1,276 @@
+{
+  "version": 1,
+  "commissionEldorado": 0.15,
+  "brainrots": [
+    {
+      "id": "sis",
+      "displayName": "Las Sis",
+      "aliases": ["lassis", "is", "sis", "lasi"],
+      "formula": { "type": "linear", "base": 17.5, "mult": 0.02, "add": 1 }
+    },
+    {
+      "id": "tacoritabicicleta",
+      "displayName": "Tacorita bicicleta",
+      "aliases": ["tacoritabicicleta", "tb", "taco", "bici"],
+      "formula": { "type": "linear", "base": 16.5, "mult": 0.01, "add": 2 }
+    },
+    {
+      "id": "nuclearodinossauro",
+      "displayName": "Nuclearo dinosauro",
+      "aliases": ["nuclearodinossauro", "nd", "nuclear", "dino"],
+      "formula": { "type": "linear", "base": 15, "mult": 0.01, "add": 3 }
+    },
+    {
+      "id": "losbros",
+      "displayName": "Los bros",
+      "aliases": ["losbros", "lb", "bros", "br"],
+      "formula": { "type": "linear", "base": 24, "mult": 0.01, "add": 3 }
+    },
+    {
+      "id": "loshotspositos",
+      "displayName": "Los hotspotsitos",
+      "aliases": ["loshotspositos", "lhp", "hots", "positos"],
+      "formula": { "type": "linear", "base": 20, "mult": 0.01, "add": 5 }
+    },
+    {
+      "id": "ketupatkepat",
+      "displayName": "Ketupat kepat",
+      "aliases": ["ketupatkepat", "kk", "ketupat", "kepat"],
+      "formula": { "type": "linear", "base": 35, "mult": 0.01, "add": 4 }
+    },
+    {
+      "id": "tralaledon",
+      "displayName": "Tralaledon",
+      "aliases": ["tralaledon", "tr", "tralale", "tral"],
+      "formula": { "type": "linear", "base": 27.5, "mult": 0.02, "add": 6 }
+    },
+    {
+      "id": "ketchuruandmusturu",
+      "displayName": "Ketchuru and musturu",
+      "aliases": ["ketchuruandmusturu", "km", "musturu", "ketchuru"],
+      "formula": { "type": "linear", "base": 42.5, "mult": 0.02, "add": 6.5 }
+    },
+    {
+      "id": "lasupremecombinasion",
+      "displayName": "La supreme combinasion",
+      "aliases": ["lasupremecombinasion", "isc", "supreme", "sup"],
+      "formula": { "type": "linear", "base": 40, "mult": 0.11, "add": 32 }
+    },
+    {
+      "id": "laextinctgrande",
+      "displayName": "La extinct grande",
+      "aliases": ["laextinctgrande", "leg", "extinct", "ext"],
+      "formula": { "type": "linear", "base": 23.5, "mult": 0.01, "add": 2 }
+    },
+    {
+      "id": "spaghettitualetti",
+      "displayName": "Spaghetti tualetti",
+      "aliases": ["spaghettitualetti", "st", "spaghetti", "tua"],
+      "formula": { "type": "linear", "base": 60, "mult": 0.01, "add": 2.5 }
+    },
+    {
+      "id": "celularciniviciosini",
+      "displayName": "Celularcini viciosini",
+      "aliases": ["celularciniviciosini", "ccv", "celular", "vicio"],
+      "formula": { "type": "linear", "base": 22.5, "mult": 0.02, "add": 2.5 }
+    },
+    {
+      "id": "worl",
+      "displayName": "WorL",
+      "aliases": ["worl", "w"],
+      "formula": { "type": "linear", "base": 30, "mult": 0.01, "add": 3 }
+    },
+    {
+      "id": "eviledon",
+      "displayName": "Eviledon",
+      "aliases": ["eviledon", "ev", "evil", "edon"],
+      "formula": { "type": "linear", "base": 31.5, "mult": 0.01, "add": 3 }
+    },
+    {
+      "id": "dragoncannelloni",
+      "displayName": "Dragon cannelloni",
+      "aliases": ["dragoncannelloni", "dc", "dragon", "drag"],
+      "formula": { "type": "linear", "base": 250, "mult": 0.04, "add": 80 }
+    },
+    {
+      "id": "cookiandmilki",
+      "displayName": "Cooki and milki",
+      "aliases": ["cookiandmilki", "cooki", "milki", "cam"],
+      "formula": { "type": "linear", "base": 155, "mult": 0.01, "add": 25 }
+    },
+    {
+      "id": "reinitosleiguito",
+      "displayName": "Reinito sleiguito",
+      "aliases": ["reinitosleiguito", "reinito", "reno"],
+      "formula": { "type": "linear", "base": 140, "mult": 0.02, "add": 30 }
+    },
+    {
+      "id": "lostacoritas",
+      "displayName": "Los tacoritas",
+      "aliases": ["lostacoritas", "it", "tacoritas", "taco2"],
+      "formula": { "type": "linear", "base": 32, "mult": 0.01, "add": 5 }
+    },
+    {
+      "id": "losprimos",
+      "displayName": "Los primos",
+      "aliases": ["losprimos", "lp", "primos", "prim"],
+      "formula": { "type": "linear", "base": 31, "mult": 0.01, "add": 5 }
+    },
+    {
+      "id": "tictacsahur",
+      "displayName": "Tictac sahur",
+      "aliases": ["tictacsahur", "ts", "tictac", "sahur"],
+      "formula": { "type": "linear", "base": 37.5, "mult": 0.02, "add": 5 }
+    },
+    {
+      "id": "garamaandmadundung",
+      "displayName": "Garama and madundung",
+      "aliases": ["garamaandmadundung", "gm", "garama", "madundung"],
+      "formula": { "type": "linear", "base": 50, "mult": 0.03, "add": 12 }
+    },
+    {
+      "id": "lospuggies",
+      "displayName": "Los puggies",
+      "aliases": ["lospuggies", "puggies", "pug"],
+      "formula": { "type": "linear", "base": 30, "mult": 0.01, "add": 1.5 }
+    },
+    {
+      "id": "moneymoneypuggy",
+      "displayName": "Money money puggy",
+      "aliases": ["moneymoneypuggy", "mmp", "puggy", "money"],
+      "formula": { "type": "linear", "base": 21, "mult": 0.01, "add": 1.5 }
+    },
+    {
+      "id": "laspookygrande",
+      "displayName": "La spooky grande",
+      "aliases": ["laspookygrande", "spooky", "spook", "spookygrande", "isg"],
+      "formula": { "type": "linear", "base": 24.5, "mult": 0.01, "add": 2 }
+    },
+    {
+      "id": "tangtangkelentang",
+      "displayName": "Tang tang kelentang",
+      "aliases": ["tangtangkelentang", "ttk", "kelentang", "tang"],
+      "formula": { "type": "linear", "base": 33.5, "mult": 0.02, "add": 3 }
+    },
+    {
+      "id": "chillinchili",
+      "displayName": "Chillin chili",
+      "aliases": ["chillinchili", "cc", "chili", "chill"],
+      "formula": { "type": "linear", "base": 25, "mult": 0.01, "add": 5 }
+    },
+    {
+      "id": "lasecretcombinasion",
+      "displayName": "La secret combinasion",
+      "aliases": ["lasecretcombinasion", "lsec", "secret", "sec"],
+      "formula": { "type": "linear", "base": 125, "mult": 0.01, "add": 7 }
+    },
+    {
+      "id": "fragramaandchocrama",
+      "displayName": "Fragrama and chocrama",
+      "aliases": ["fragrama", "fac", "chocrama", "fc"],
+      "formula": { "type": "linear", "base": 100, "mult": 0.01, "add": 12 }
+    },
+    {
+      "id": "burguroandfryuro",
+      "displayName": "Burguro and fryuro",
+      "aliases": ["burguroandfryuro", "bf", "burguro", "fryuro"],
+      "formula": { "type": "linear", "base": 150, "mult": 0.01, "add": 18 }
+    },
+    {
+      "id": "strawberryelephant",
+      "displayName": "Strawberry elephant",
+      "aliases": ["strawberryelephant", "se", "straw", "elephant"],
+      "formula": { "type": "linear", "base": 350, "mult": 0.3, "add": 700 }
+    },
+    {
+      "id": "losspaghettis",
+      "displayName": "Los spaghettis",
+      "aliases": ["spaghettis", "losspaghettis", "spag"],
+      "formula": { "type": "linear", "base": 70, "mult": 0.01, "add": 3 }
+    },
+    {
+      "id": "chipsoandqueso",
+      "displayName": "Chipso and queso",
+      "aliases": ["chipsoandqueso", "ca", "chipso", "queso"],
+      "formula": { "type": "linear", "base": 25, "mult": 0.02, "add": 3.5 }
+    },
+    {
+      "id": "latacocombinasion",
+      "displayName": "La taco combinasion",
+      "aliases": ["latacocombinasion", "itc", "tacocomb"],
+      "formula": { "type": "linear", "base": 35, "mult": 0.01, "add": 4 }
+    },
+    {
+      "id": "fishinoclownino",
+      "displayName": "Fishino clownino",
+      "aliases": ["fishinoclownino", "fishino", "clownino"],
+      "formula": { "type": "linear", "base": 15.5, "mult": 0.01, "add": 10 }
+    },
+    {
+      "id": "spookyandpumpky",
+      "displayName": "Spooky and pumpky",
+      "aliases": ["spookyandpumpky", "pumpky", "spump", "spookypump", "sp"],
+      "formula": { "type": "linear", "base": 80, "mult": 0.01, "add": 12 }
+    },
+    {
+      "id": "lacasaboo",
+      "displayName": "La casa boo",
+      "aliases": ["lacasa", "boo", "casa", "icb"],
+      "formula": { "type": "linear", "base": 100, "mult": 0.03, "add": 14 }
+    },
+    {
+      "id": "headlesshorseman",
+      "displayName": "Headless horseman",
+      "aliases": ["headlesshorseman", "headless", "hh", "horseman", "head"],
+      "formula": { "type": "linear", "base": 175, "mult": 0.25, "add": 460 }
+    },
+    {
+      "id": "meowl",
+      "displayName": "Meowl",
+      "aliases": ["meowl", "meow", "meo", "miau"],
+      "formula": { "type": "linear", "base": 400, "mult": 0.3, "add": 500 }
+    },
+    {
+      "id": "swaggybros",
+      "displayName": "Swaggy bros",
+      "aliases": ["swaggybros"],
+      "formula": { "type": "linear", "base": 40, "mult": 0.01, "add": 3 }
+    },
+    {
+      "id": "lavadoritospinito",
+      "displayName": "Lavadorito spinito",
+      "aliases": ["lavadoritospinito", "lavadorito", "spinito"],
+      "formula": { "type": "linear", "base": 45, "mult": 0.02, "add": 6 }
+    },
+    {
+      "id": "lagingersekolah",
+      "displayName": "La ginger sekolah",
+      "aliases": ["lagingersekolah", "laginger", "ginger"],
+      "formula": { "type": "linear", "base": 75, "mult": 0.02, "add": 5 }
+    },
+    {
+      "id": "festive67",
+      "displayName": "Festive 67",
+      "aliases": ["festive67", "sixseven"],
+      "formula": { "type": "linear", "base": 67, "mult": 0.01, "add": 14 }
+    },
+    {
+      "id": "jollyjollysahur",
+      "displayName": "Jolly jolly sahur",
+      "aliases": ["jollysahur", "jollyjollysahur", "jjs"],
+      "formula": { "type": "linear", "base": 45, "mult": 0.01, "add": 10 }
+    },
+    {
+      "id": "gingergerat",
+      "displayName": "Ginger gerat",
+      "aliases": ["gingergerat", "gerat"],
+      "formula": { "type": "linear", "base": 75, "mult": 0.03, "add": 18 }
+    },
+    {
+      "id": "dragongingerini",
+      "displayName": "Dragon Gingerini",
+      "aliases": ["dragongingerini", "gingerini"],
+      "formula": { "type": "linear", "base": 300, "mult": 0.04, "add": 100 }
+    }
+  ]
+}

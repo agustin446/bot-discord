@@ -1,455 +1,473 @@
-require('dotenv').config();
-const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
+require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
+const {
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  PermissionsBitField,
+} = require("discord.js");
 
-// Capturar errores inesperados
-process.on("unhandledRejection", console.error);
-process.on("uncaughtException", console.error);
+// ========= Seguridad / logs =========
+process.on("unhandledRejection", (err) => console.error("unhandledRejection:", err));
+process.on("uncaughtException", (err) => console.error("uncaughtException:", err));
 
 console.log("🚀 BOT INICIANDO...");
 
+// ========= ENV =========
 const token = process.env.TOKEN;
+if (!token) {
+  console.error("❌ TOKEN no definido en .env (TOKEN=xxxxx)");
+  process.exit(1);
+}
 
-// ================== CLIENTE DISCORD ==================
+// ========= Express (UNA sola vez) =========
+const app = express();
+app.get("/", (req, res) => res.send("Bot activo!"));
+const PORT = process.env.PORT || 3000;
+const server = app.listen(PORT, () => console.log("🌐 Web server en puerto", PORT));
+server.on("error", (e) => console.error("Express error:", e));
+
+// ========= Discord =========
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
-// ================== MINI SERVIDOR WEB ==================
-const app = express();
-app.get("/", (req, res) => res.send("Bot activo!"));
-app.listen(3000, () => console.log("Servidor web iniciado en puerto 3000"));
+client.on("error", console.error);
+client.on("shardError", console.error);
 
-// ================== PERSONAJES Y FÓRMULAS ================== 
-const personajes = {
-  // Las sis
-  lassis: M => (M - 17.5) * 0.02 + 1,
-  is: M => (M - 17.5) * 0.02 + 1,
-  sis: M => (M - 17.5) * 0.02 + 1,
-  lasi: M => (M - 17.5) * 0.02 + 1,
+// ========= Config JSON =========
+const DATA_FILE = path.join(__dirname, "brainrots.json");
 
-  // Tacorita bicicleta
-  tacoritabicicleta: M => (M - 16.5) * 0.01 + 2,
-  tb: M => (M - 16.5) * 0.01 + 2,
-  taco: M => (M - 16.5) * 0.01 + 2,
-  bici: M => (M - 16.5) * 0.01 + 2,
+let config = null;
+let brainrotByAlias = new Map(); // alias -> brainrot
 
-  // Nuclearo dinosauro
-  nuclearodinossauro: M => (M - 15) * 0.01 + 3,
-  nd: M => (M - 15) * 0.01 + 3,
-  nuclear: M => (M - 15) * 0.01 + 3,
-  dino: M => (M - 15) * 0.01 + 3,
+function normalizeKey(s) {
+  return String(s || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9_]/g, "");
+}
 
-  // Los bros
-  losbros: M => (M - 24) * 0.01 + 3,
-  lb: M => (M - 24) * 0.01 + 3,
-  bros: M => (M - 24) * 0.01 + 3,
-  br: M => (M - 24) * 0.01 + 3,
+function loadConfig() {
+  const raw = fs.readFileSync(DATA_FILE, "utf-8");
+  config = JSON.parse(raw);
 
-  // Los hotspotsitos
-  loshotspositos: M => (M - 20) * 0.01 + 5,
-  lhp: M => (M - 20) * 0.01 + 5,
-  hots: M => (M - 20) * 0.01 + 5,
-  positos: M => (M - 20) * 0.01 + 5,
+  brainrotByAlias = new Map();
+  for (const b of config.brainrots || []) {
+    const allKeys = new Set([b.id, ...(b.aliases || [])].map(normalizeKey));
+    for (const k of allKeys) {
+      if (!k) continue;
+      // Si hay conflicto de alias, el primero gana (para no romper todo silenciosamente)
+      if (!brainrotByAlias.has(k)) brainrotByAlias.set(k, b);
+    }
+  }
+}
 
-  // Ketupat kepat
-  ketupatkepat: M => (M - 35) * 0.01 + 4,
-  kk: M => (M - 35) * 0.01 + 4,
-  ketupat: M => (M - 35) * 0.01 + 4,
-  kepat: M => (M - 35) * 0.01 + 4,
+function saveConfig() {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(config, null, 2), "utf-8");
+}
 
-  // Tralaledon
-  tralaledon: M => (M - 27.5) * 0.02 + 6,
-  tr: M => (M - 27.5) * 0.02 + 6,
-  tralale: M => (M - 27.5) * 0.02 + 6,
-  tral: M => (M - 27.5) * 0.02 + 6,
+function isStaff(member) {
+  // Ajusta si quieres: Admin o ManageGuild
+  return member?.permissions?.has(PermissionsBitField.Flags.Administrator)
+    || member?.permissions?.has(PermissionsBitField.Flags.ManageGuild);
+}
 
-  // Ketchuru and musturu
-  ketchuruandmusturu: M => (M - 42.5) * 0.02 + 6.5,
-  km: M => (M - 42.5) * 0.02 + 6.5,
-  musturu: M => (M - 42.5) * 0.02 + 6.5,
-  ketchuru: M => (M - 42.5) * 0.02 + 6.5,
+function makeEmbed({ title, description, color = 0x2b2d31 }) {
+  return new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(description || null)
+    .setColor(color)
+    .setTimestamp()
+    .setFooter({ text: "Brainrot Tools" });
+}
 
-  // La supreme combinasion
-  lasupremecombinasion: M => (M - 40) * 0.11 + 32,
-  isc: M => (M - 40) * 0.11 + 32,
-  supreme: M => (M - 40) * 0.11 + 32,
-  sup: M => (M - 40) * 0.11 + 32,
+function formulaToText(f) {
+  if (!f || f.type !== "linear") return "N/A";
+  // (M - base) * mult + add
+  return `(M - ${f.base}) * ${f.mult} + ${f.add}`;
+}
 
-  // La extinct grande
-  laextinctgrande: M => (M - 23.5) * 0.01 + 2,
-  leg: M => (M - 23.5) * 0.01 + 2,
-  extinct: M => (M - 23.5) * 0.01 + 2,
-  ext: M => (M - 23.5) * 0.01 + 2,
+function evalLinearFormula(f, M) {
+  return (M - Number(f.base)) * Number(f.mult) + Number(f.add));
+}
 
-  // Spaghetti tualetti
-  spaghettitualetti: M => (M - 60) * 0.01 + 2.5,
-  st: M => (M - 60) * 0.01 + 2.5,
-  spaghetti: M => (M - 60) * 0.01 + 2.5,
-  tua: M => (M - 60) * 0.01 + 2.5,
+// ========= Cargar config al inicio =========
+try {
+  loadConfig();
+  console.log("✅ brainrots.json cargado");
+} catch (e) {
+  console.error("❌ No pude cargar brainrots.json:", e);
+  process.exit(1);
+}
 
-  // Celularcini viciosini
-  celularciniviciosini: M => (M - 22.5) * 0.02 + 2.5,
-  ccv: M => (M - 22.5) * 0.02 + 2.5,
-  celular: M => (M - 22.5) * 0.02 + 2.5,
-  vicio: M => (M - 22.5) * 0.02 + 2.5,
-
-  // WorL
-  worl: M => (M - 30) * 0.01 + 3,
-  w: M => (M - 30) * 0.01 + 3,
-
-  // Eviledon
-  eviledon: M => (M - 31.5) * 0.01 + 3,
-  ev: M => (M - 31.5) * 0.01 + 3,
-  evil: M => (M - 31.5) * 0.01 + 3,
-  edon: M => (M - 31.5) * 0.01 + 3,
-
-  // Dragon cannelloni
-  dragoncannelloni: M => (M - 250) * 0.04 + 80,
-  dc: M => (M - 250) * 0.04 + 80,
-  dragon: M => (M - 250) * 0.04 + 80,
-  drag: M => (M - 250) * 0.04 + 80,
-
-  // Cooki and milki
-  cookiandmilki: M => (M - 155) * 0.01 + 25,
-  cooki: M => (M - 155) * 0.01 + 25,
-  milki: M => (M - 155) * 0.01 + 25,
-  cam: M => (M - 155) * 0.01 + 25,
-
-  // Reinito sleiguito
-  reinitosleiguito: M => (M - 140) * 0.02 + 30,
-  reinito: M => (M - 140) * 0.02 + 30,
-  reno: M => (M - 140) * 0.02 + 30,
-
-  // Los tacoritas
-  lostacoritas: M => (M - 32) * 0.01 + 5,
-  it: M => (M - 32) * 0.01 + 5,
-  tacoritas: M => (M - 32) * 0.01 + 5,
-  taco2: M => (M - 32) * 0.01 + 5,
-
-  // Los primos
-  losprimos: M => (M - 31) * 0.01 + 5,
-  lp: M => (M - 31) * 0.01 + 5,
-  primos: M => (M - 31) * 0.01 + 5,
-  prim: M => (M - 31) * 0.01 + 5,
-
-  // Tictac sahur
-  tictacsahur: M => (M - 37.5) * 0.02 + 5,
-  ts: M => (M - 37.5) * 0.02 + 5,
-  tictac: M => (M - 37.5) * 0.02 + 5,
-  sahur: M => (M - 37.5) * 0.02 + 5,
-
-  // Garama and madundung
-  garamaandmadundung: M => (M - 50) * 0.03 + 12,
-  gm: M => (M - 50) * 0.03 + 12,
-  garama: M => (M - 50) * 0.03 + 12,
-  madundung: M => (M - 50) * 0.03 + 12,
-
-  // Los puggies
-  puggies: M => (M - 30) * 0.01 + 1.5,
-  lospuggies: M => (M - 30) * 0.01 + 1.5,
-  pug: M => (M - 30) * 0.01 + 1.5,
-
-  // Money money puggy
-  moneymoneypuggy: M => (M - 21) * 0.01 + 1.5,
-  mmp: M => (M - 21) * 0.01 + 1.5,
-  puggy: M => (M - 21) * 0.01 + 1.5,
-  money: M => (M - 21) * 0.01 + 1.5,
-
-  // La spooky grande
-  laspookygrande: M => (M - 24.5) * 0.01 + 2,
-  spooky: M => (M - 24.5) * 0.01 + 2,
-  spook: M => (M - 24.5) * 0.01 + 2,
-  spookygrande: M => (M - 24.5) * 0.01 + 2,
-  isg: M => (M - 24.5) * 0.01 + 2,
-
-  // Tang tang kelentang
-  tangtangkelentang: M => (M - 33.5) * 0.02 + 3,
-  ttk: M => (M - 33.5) * 0.02 + 3,
-  kelentang: M => (M - 33.5) * 0.02 + 3,
-  tang: M => (M - 33.5) * 0.02 + 3,
-
-  // Chillin chili
-  chillinchili: M => (M - 25) * 0.01 + 5,
-  cc: M => (M - 25) * 0.01 + 5,
-  chili: M => (M - 25) * 0.01 + 5,
-  chill: M => (M - 25) * 0.01 + 5,
-
-  // La secret combinasion
-  lassecretcombinasion: M => (M - 125) * 0.01 + 7,
-  lsec: M => (M - 125) * 0.01 + 7,
-  secret: M => (M - 125) * 0.01 + 7,
-  sec: M => (M - 125) * 0.01 + 7,
-
-  // Fragrama and chocrama
-  fragrama: M => (M - 100) * 0.01 + 12,
-  fac: M => (M - 100) * 0.01 + 12,
-  chocrama: M => (M - 100) * 0.01 + 12,
-  fc: M => (M - 100) * 0.01 + 12,
-
-  // Burguro and fryuro
-  burguroandfryuro: M => (M - 150) * 0.01 + 18,
-  bf: M => (M - 150) * 0.01 + 18,
-  burguro: M => (M - 150) * 0.01 + 18,
-  fryuro: M => (M - 150) * 0.01 + 18,
-
-  // Strawberry elephant
-  strawberryelephant: M => (M - 350) * 0.30 + 700,
-  se: M => (M - 350) * 0.30 + 700,
-  straw: M => (M - 350) * 0.30 + 700,
-  elephant: M => (M - 350) * 0.30 + 700,
-
-  // Los spaghettis
-  spaghettis: M => (M - 70) * 0.01 + 3,
-  losspaghettis: M => (M - 70) * 0.01 + 3,
-  spag: M => (M - 70) * 0.01 + 3,
-
-  // Chipso and queso
-  chipsoandqueso: M => (M - 25) * 0.02 + 3.5,
-  ca: M => (M - 25) * 0.02 + 3.5,
-  chipso: M => (M - 25) * 0.02 + 3.5,
-  queso: M => (M - 25) * 0.02 + 3.5,
-
-  // La taco combinasion
-  latacocombinasion: M => (M - 35) * 0.01 + 4,
-  itc: M => (M - 35) * 0.01 + 4,
-  tacocomb: M => (M - 35) * 0.01 + 4,
-
-  // Fishino clownino
-  fishinoclownino: M => (M - 15.5) * 0.01 + 10,
-  fishino: M => (M - 15.5) * 0.01 + 10,
-  clownino: M => (M - 15.5) * 0.01 + 10,
-
-  // Spooky and pumpky
-  spookyandpumpky: M => (M - 80) * 0.01 + 12,
-  pumpky: M => (M - 80) * 0.01 + 12,
-  spump: M => (M - 80) * 0.01 + 12,
-  spookypump: M => (M - 80) * 0.01 + 12,
-  sp: M => (M - 80) * 0.01 + 12,
-
-  // La casa boo
-  lacasa: M => (M - 100) * 0.03 + 14,
-  boo: M => (M - 100) * 0.03 + 14,
-  casa: M => (M - 100) * 0.03 + 14,
-  icb: M => (M - 100) * 0.03 + 14,
-
-  // Headless horseman
-  headlesshorseman: M => (M - 175) * 0.25 + 460,
-  headless: M => (M - 175) * 0.25 + 460,
-  hh: M => (M - 175) * 0.25 + 460,
-  horseman: M => (M - 175) * 0.25 + 460,
-  head: M => (M - 175) * 0.25 + 460,
-
-  // Meowl
-  meowl: M => (M - 400) * 0.30 + 500,
-  meow: M => (M - 400) * 0.30 + 500,
-  meo: M => (M - 400) * 0.30 + 500,
-  miau: M => (M - 400) * 0.30 + 500,
-
-  // Swaggy bros
-  swaggybros: M => (M - 40) * 0.01 + 3,
-
-  // Lavadorito spinito
-  lavadoritospinito: M => (M - 45) * 0.02 + 6,
-  lavadorito: M => (M - 45) * 0.02 + 6,
-  spinito: M => (M - 45) * 0.02 + 6,
-
-  // La ginger sekolah
-  lagingersekolah: M => (M - 75) * 0.02 + 5,
-  laginger: M => (M - 75) * 0.02 + 5,
-  ginger: M => (M - 75) * 0.02 + 5,
-
-  // Festive 67
-  festive67: M => (M - 67) * 0.01 + 14,
-  sixseven: M => (M - 67) * 0.01 + 14,
-
-  // Jolly jolly sahur
-  jollysahur: M => (M - 45) * 0.01 + 10,
-  jollyjollysahur: M => (M - 45) * 0.01 + 10,
-  jjs: M => (M - 45) * 0.01 + 10,
-
-  // Ginger gerat
-  gingergerat: M => (M - 75) * 0.03 + 18,
-  gerat: M => (M - 75) * 0.03 + 18,
-
-  // Dragon Gingerini
-  dragongingerini: M => (M - 300) * 0.04 + 100,
-  gingerini: M => (M - 300) * 0.04 + 100
-};
-
-
-// ================== BOT LISTO ==================
+// ========= Ready =========
 client.once("ready", () => {
   console.log(`✅ Bot conectado como ${client.user.tag}`);
 });
 
-// ================== MENSAJES ==================
+// ========= Comandos =========
+const PREFIX = ",";
+
 client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
-  if (!message.content.startsWith(",")) return;
+  try {
+    if (message.author.bot) return;
+    if (!message.content.startsWith(PREFIX)) return;
 
-  const args = message.content.slice(1).trim().split(/\s+/);
-  const comando = args.shift().toLowerCase();
-// ================== COMANDO VALOR ==================
-if (comando === "valor") {
-  const personaje = args[0]?.toLowerCase();
-  const M = parseFloat(args[1]);
+    const args = message.content.slice(PREFIX.length).trim().split(/\s+/);
+    const comando = normalizeKey(args.shift());
 
-  if (!personaje || isNaN(M)) {
-    return message.reply(
-      "❌ Uso correcto:\n" +
-      "` ,valor <personaje> <M>`\n" +
-      "Ejemplo: `,valor sis 25`"
-    );
-  }
+    if (!comando) return;
 
-  const formula = personajes[personaje];
+    // ================== HELP / COMANDOS ==================
+    if (comando === "comandos" || comando === "help") {
+      const e = makeEmbed({
+        title: "📌 Comandos",
+        description:
+          "**Brainrots**\n" +
+          `• \`${PREFIX}brainrots [pagina]\` → listar brainrots\n` +
+          `• \`${PREFIX}brainrot <nombre>\` → ver detalle\n` +
+          `• \`${PREFIX}valor <nombre> <M>\` → calcular valor\n\n` +
+          "**Admin / Staff**\n" +
+          `• \`${PREFIX}brainrot set <nombre> <base> <mult> <add>\`\n` +
+          `• \`${PREFIX}brainrot alias add <nombre> <alias>\`\n` +
+          `• \`${PREFIX}brainrot alias remove <nombre> <alias>\`\n` +
+          `• \`${PREFIX}brainrot reload\` → recargar JSON\n\n` +
+          "**Eldorado**\n" +
+          `• \`${PREFIX}eldorado <precio>\`\n` +
+          `• \`${PREFIX}reventa <compra> <venta>\`\n` +
+          `• \`${PREFIX}proveedor <precioVenta> <10|15|20>\`\n\n` +
+          "**Moderación**\n" +
+          `• \`${PREFIX}c <1-100>\` → borrar mensajes (requiere Manage Messages)`,
+        color: 0x5865f2,
+      });
 
-  if (!formula) {
-    return message.reply("❌ Ese personaje no existe.");
-  }
-
-  const resultado = formula(M);
-
-  const embed = new EmbedBuilder()
-    .setTitle("📊 Valor del personaje")
-    .addFields(
-      { name: "Personaje", value: personaje, inline: true },
-      { name: "Valor M", value: M.toString(), inline: true },
-      { name: "Resultado", value: resultado.toFixed(2) }
-    )
-    .setColor("Gold");
-
-  return message.reply({ embeds: [embed] });
-}
-// ================== COMANDO REVENTA ==================
-if (comando === "reventa") {
-  const compra = parseFloat(args[0]);
-  const venta = parseFloat(args[1]);
-
-  if (isNaN(compra) || isNaN(venta)) {
-    return message.reply("❌ Usa: `,reventa <compra> <venta>`");
-  }
-
-  const COMISION = 0.15;
-
-  const comisionEldorado = venta * COMISION;
-  const ventaLimpia = venta - comisionEldorado;
-  const ganancia = ventaLimpia - compra;
-
-  const estado = ganancia > 0 ? "✅ CONVIENE" : "⛔ NO CONVIENE";
-
-  const embed = new EmbedBuilder()
-    .setTitle("📊 Reventa Eldorado")
-    .addFields(
-      { name: "💰 Compra", value: `$${compra.toFixed(2)}`, inline: true },
-      { name: "💵 Venta", value: `$${venta.toFixed(2)}`, inline: true },
-      { name: "🧾 Comisión Eldorado (15%)", value: `-$${comisionEldorado.toFixed(2)}` },
-      { name: "📥 Venta limpia", value: `$${ventaLimpia.toFixed(2)}` },
-      { name: "📈 Ganancia real", value: `$${ganancia.toFixed(2)}` },
-      { name: "📌 Resultado", value: estado }
-    )
-    .setColor(ganancia > 0 ? "Green" : "Red");
-
-  return message.reply({ embeds: [embed] });
-}
-// ================== COMANDO ELDORADO ==================
-if (comando === "eldorado") {
-  const precio = parseFloat(args[0]);
-
-  if (isNaN(precio)) {
-    return message.reply("❌ Usa: `,eldorado <precio>`");
-  }
-
-  const COMISION = 0.15;
-  const descuento = precio * COMISION;
-  const limpio = precio - descuento;
-
-  const embed = new EmbedBuilder()
-    .setTitle("🧾 Comisión Eldorado")
-    .addFields(
-      { name: "💵 Precio de venta", value: `$${precio.toFixed(2)}` },
-      { name: "📉 Eldorado (15%)", value: `-$${descuento.toFixed(2)}` },
-      { name: "📥 Te queda limpio", value: `$${limpio.toFixed(2)}` }
-    )
-    .setColor("Blue");
-
-  return message.reply({ embeds: [embed] });
-}
-// ================== COMANDO PROVEEDOR ==================
-else if (comando === "proveedor") {
-  const precioVenta = parseFloat(args[0]);
-  const porcentajeVendedor = parseFloat(args[1]);
-
-  if (
-    isNaN(precioVenta) ||
-    isNaN(porcentajeVendedor) ||
-    ![10, 15, 20].includes(porcentajeVendedor)
-  ) {
-    return message.reply(
-      "❌ Usa: `,proveedor <precioVenta> <porcentajeVendedor>`\n" +
-      "Porcentaje del vendedor permitido: 10, 15 o 20\n" +
-      "Ejemplo: `,proveedor 100 15`"
-    );
-  }
-
-  const COMISION_ELDORADO = 0.15;
-
-  // Comisión Eldorado
-  const comisionEldorado = precioVenta * COMISION_ELDORADO;
-  const montoLimpio = precioVenta - comisionEldorado;
-
-  // Reparto
-  const vendedorGana = montoLimpio * (porcentajeVendedor / 100);
-  const proveedorGana = montoLimpio - vendedorGana;
-
-  const embed = new EmbedBuilder()
-    .setTitle("🏪 Reparto Proveedor / Vendedor")
-    .addFields(
-      { name: "💰 Precio de venta", value: `$${precioVenta.toFixed(2)}` },
-      { name: "🧾 Comisión Eldorado (15%)", value: `-$${comisionEldorado.toFixed(2)}` },
-      { name: "📥 Monto limpio", value: `$${montoLimpio.toFixed(2)}` },
-      { name: "🧑‍💼 Vendedor (%)", value: `${porcentajeVendedor}%` },
-      { name: "🧑‍💼 Vendedor recibe", value: `$${vendedorGana.toFixed(2)}` },
-      { name: "📦 Proveedor recibe", value: `$${proveedorGana.toFixed(2)}` }
-    )
-    .setColor("Orange");
-
-  return message.reply({ embeds: [embed] });
-}
-
-/*
-COMANDOS DISPONIBLES:
-- ,valor <personaje> <M>
-- ,reventa <compra> <venta>
-- ,eldorado <precio>
-- ,proveedor <precio> <10|15|20>
-- ,comandos
-- ,c <1-100>
-*/
-
-  // ================== COMANDO PURGE ==================
-  if (comando === "c") {
-    const cantidad = parseInt(args[0]);
-
-    if (isNaN(cantidad) || cantidad < 1 || cantidad > 100) {
-      return message.reply("❌ Usa: `,c 1-100`");
+      return message.reply({ embeds: [e] });
     }
 
-    try {
-      await message.channel.bulkDelete(cantidad, true);
-      const aviso = await message.channel.send(`🧹 ${cantidad} mensajes eliminados`);
-      setTimeout(() => aviso.delete(), 3000);
-    } catch (err) {
-      console.error(err);
-      message.reply("❌ No pude borrar los mensajes.");
+    // ================== LISTA BRAINROTS ==================
+    if (comando === "brainrots") {
+      const page = Math.max(1, parseInt(args[0] || "1", 10));
+      const perPage = 15;
+
+      const list = (config.brainrots || []).slice().sort((a, b) =>
+        (a.displayName || a.id).localeCompare(b.displayName || b.id)
+      );
+
+      const totalPages = Math.max(1, Math.ceil(list.length / perPage));
+      const safePage = Math.min(page, totalPages);
+      const start = (safePage - 1) * perPage;
+      const chunk = list.slice(start, start + perPage);
+
+      const lines = chunk.map((b) => {
+        const main = `**${b.displayName || b.id}**`;
+        const hint = b.aliases?.length ? `\`(${b.aliases[0]})\`` : "";
+        return `• ${main} ${hint}`;
+      });
+
+      const e = makeEmbed({
+        title: "📚 Brainrots disponibles",
+        description: lines.join("\n") || "No hay brainrots cargados.",
+        color: 0xf1c40f,
+      }).setFooter({ text: `Página ${safePage}/${totalPages} • Brainrot Tools` });
+
+      return message.reply({ embeds: [e] });
     }
+
+    // ================== VER DETALLE BRAINROT ==================
+    if (comando === "brainrot") {
+      const sub = normalizeKey(args[0]);
+
+      // Staff: reload
+      if (sub === "reload") {
+        if (!isStaff(message.member)) {
+          return message.reply("⛔ No tienes permisos para recargar configuración.");
+        }
+        loadConfig();
+        const e = makeEmbed({
+          title: "✅ Config recargada",
+          description: "brainrots.json se recargó correctamente.",
+          color: 0x57f287,
+        });
+        return message.reply({ embeds: [e] });
+      }
+
+      // Staff: set formula
+      if (sub === "set") {
+        if (!isStaff(message.member)) {
+          return message.reply("⛔ No tienes permisos para cambiar fórmulas.");
+        }
+
+        const key = normalizeKey(args[1]);
+        const base = parseFloat(args[2]);
+        const mult = parseFloat(args[3]);
+        const add = parseFloat(args[4]);
+
+        if (!key || [base, mult, add].some((n) => Number.isNaN(n))) {
+          return message.reply(
+            `❌ Uso: \`${PREFIX}brainrot set <nombre> <base> <mult> <add>\`\nEj: \`${PREFIX}brainrot set sis 17.5 0.02 1\``
+          );
+        }
+
+        const b = brainrotByAlias.get(key);
+        if (!b) return message.reply("❌ No encontré ese brainrot.");
+
+        b.formula = { type: "linear", base, mult, add };
+        saveConfig();
+        loadConfig();
+
+        const e = makeEmbed({
+          title: "✅ Fórmula actualizada",
+          description:
+            `**${b.displayName || b.id}**\n` +
+            `Nueva fórmula: \`${formulaToText(b.formula)}\``,
+          color: 0x57f287,
+        });
+
+        return message.reply({ embeds: [e] });
+      }
+
+      // Staff: alias add/remove
+      if (sub === "alias") {
+        if (!isStaff(message.member)) {
+          return message.reply("⛔ No tienes permisos para editar aliases.");
+        }
+
+        const action = normalizeKey(args[1]); // add/remove
+        const key = normalizeKey(args[2]);
+        const aliasRaw = args[3];
+        const alias = normalizeKey(aliasRaw);
+
+        if (!["add", "remove"].includes(action) || !key || !alias) {
+          return message.reply(
+            `❌ Uso:\n` +
+              `• \`${PREFIX}brainrot alias add <nombre> <alias>\`\n` +
+              `• \`${PREFIX}brainrot alias remove <nombre> <alias>\``
+          );
+        }
+
+        const b = brainrotByAlias.get(key);
+        if (!b) return message.reply("❌ No encontré ese brainrot.");
+
+        b.aliases = Array.isArray(b.aliases) ? b.aliases : [];
+        const set = new Set(b.aliases.map(normalizeKey));
+
+        if (action === "add") set.add(alias);
+        if (action === "remove") set.delete(alias);
+
+        b.aliases = Array.from(set);
+        saveConfig();
+        loadConfig();
+
+        const e = makeEmbed({
+          title: "✅ Aliases actualizados",
+          description:
+            `**${b.displayName || b.id}**\n` +
+            `Aliases: ${b.aliases.length ? b.aliases.map((a) => `\`${a}\``).join(", ") : "_(ninguno)_"}`
+          ,
+          color: 0x57f287,
+        });
+
+        return message.reply({ embeds: [e] });
+      }
+
+      // Normal: show brainrot info
+      const key = normalizeKey(args[0]);
+      if (!key) {
+        return message.reply(`❌ Uso: \`${PREFIX}brainrot <nombre>\``);
+      }
+
+      const b = brainrotByAlias.get(key);
+      if (!b) return message.reply("❌ No encontré ese brainrot.");
+
+      const e = makeEmbed({
+        title: `🧠 ${b.displayName || b.id}`,
+        description:
+          `**ID:** \`${b.id}\`\n` +
+          `**Fórmula:** \`${formulaToText(b.formula)}\`\n` +
+          `**Aliases:** ${b.aliases?.length ? b.aliases.map((a) => `\`${a}\``).join(", ") : "_(ninguno)_"}`
+        ,
+        color: 0xf1c40f,
+      });
+
+      return message.reply({ embeds: [e] });
+    }
+
+    // ================== VALOR ==================
+    if (comando === "valor") {
+      const personaje = normalizeKey(args[0]);
+      const M = parseFloat(args[1]);
+
+      if (!personaje || Number.isNaN(M)) {
+        return message.reply(
+          `❌ Uso: \`${PREFIX}valor <brainrot> <M>\`\nEj: \`${PREFIX}valor sis 25\``
+        );
+      }
+
+      const b = brainrotByAlias.get(personaje);
+      if (!b) return message.reply("❌ Ese brainrot no existe.");
+
+      if (!b.formula || b.formula.type !== "linear") {
+        return message.reply("❌ Este brainrot no tiene una fórmula válida.");
+      }
+
+      const resultado = evalLinearFormula(b.formula, M);
+
+      const e = makeEmbed({
+        title: "📊 Valor del brainrot",
+        description: `Cálculo completado.`,
+        color: 0xf1c40f,
+      }).addFields(
+        { name: "Brainrot", value: `**${b.displayName || b.id}** (\`${personaje}\`)`, inline: false },
+        { name: "Fórmula", value: `\`${formulaToText(b.formula)}\``, inline: false },
+        { name: "M", value: `\`${M}\``, inline: true },
+        { name: "Resultado", value: `\`${resultado.toFixed(2)}\``, inline: true }
+      );
+
+      return message.reply({ embeds: [e] });
+    }
+
+    // ================== REVENTA ==================
+    if (comando === "reventa") {
+      const compra = parseFloat(args[0]);
+      const venta = parseFloat(args[1]);
+      if (Number.isNaN(compra) || Number.isNaN(venta)) {
+        return message.reply(`❌ Uso: \`${PREFIX}reventa <compra> <venta>\``);
+      }
+
+      const COMISION = Number(config.commissionEldorado ?? 0.15);
+      const comisionEldorado = venta * COMISION;
+      const ventaLimpia = venta - comisionEldorado;
+      const ganancia = ventaLimpia - compra;
+
+      const estado = ganancia > 0 ? "✅ CONVIENE" : "⛔ NO CONVIENE";
+      const color = ganancia > 0 ? 0x57f287 : 0xed4245;
+
+      const e = makeEmbed({
+        title: "🧾 Reventa (Eldorado)",
+        description: estado,
+        color,
+      }).addFields(
+        { name: "Compra", value: `$${compra.toFixed(2)}`, inline: true },
+        { name: "Venta", value: `$${venta.toFixed(2)}`, inline: true },
+        { name: "Comisión", value: `-${(COMISION * 100).toFixed(0)}%  →  -$${comisionEldorado.toFixed(2)}`, inline: false },
+        { name: "Venta limpia", value: `$${ventaLimpia.toFixed(2)}`, inline: true },
+        { name: "Ganancia real", value: `$${ganancia.toFixed(2)}`, inline: true }
+      );
+
+      return message.reply({ embeds: [e] });
+    }
+
+    // ================== ELDORADO ==================
+    if (comando === "eldorado") {
+      const precio = parseFloat(args[0]);
+      if (Number.isNaN(precio)) {
+        return message.reply(`❌ Uso: \`${PREFIX}eldorado <precio>\``);
+      }
+
+      const COMISION = Number(config.commissionEldorado ?? 0.15);
+      const descuento = precio * COMISION;
+      const limpio = precio - descuento;
+
+      const e = makeEmbed({
+        title: "💳 Comisión Eldorado",
+        description: "Desglose de comisión",
+        color: 0x5865f2,
+      }).addFields(
+        { name: "Precio de venta", value: `$${precio.toFixed(2)}`, inline: true },
+        { name: "Comisión", value: `-${(COMISION * 100).toFixed(0)}%  →  -$${descuento.toFixed(2)}`, inline: true },
+        { name: "Te queda limpio", value: `$${limpio.toFixed(2)}`, inline: false }
+      );
+
+      return message.reply({ embeds: [e] });
+    }
+
+    // ================== PROVEEDOR ==================
+    if (comando === "proveedor") {
+      const precioVenta = parseFloat(args[0]);
+      const porcentajeVendedor = parseFloat(args[1]);
+
+      if (
+        Number.isNaN(precioVenta) ||
+        Number.isNaN(porcentajeVendedor) ||
+        ![10, 15, 20].includes(porcentajeVendedor)
+      ) {
+        return message.reply(
+          `❌ Uso: \`${PREFIX}proveedor <precioVenta> <10|15|20>\`\nEj: \`${PREFIX}proveedor 100 15\``
+        );
+      }
+
+      const COMISION_ELDORADO = Number(config.commissionEldorado ?? 0.15);
+      const comisionEldorado = precioVenta * COMISION_ELDORADO;
+      const montoLimpio = precioVenta - comisionEldorado;
+
+      const vendedorGana = montoLimpio * (porcentajeVendedor / 100);
+      const proveedorGana = montoLimpio - vendedorGana;
+
+      const e = makeEmbed({
+        title: "🏪 Reparto Proveedor / Vendedor",
+        description: "Cálculo de reparto con comisión Eldorado.",
+        color: 0xf1c40f,
+      }).addFields(
+        { name: "Precio de venta", value: `$${precioVenta.toFixed(2)}`, inline: true },
+        { name: "Comisión Eldorado", value: `-${(COMISION_ELDORADO * 100).toFixed(0)}% → -$${comisionEldorado.toFixed(2)}`, inline: true },
+        { name: "Monto limpio", value: `$${montoLimpio.toFixed(2)}`, inline: false },
+        { name: "Vendedor (%)", value: `${porcentajeVendedor}%`, inline: true },
+        { name: "Vendedor recibe", value: `$${vendedorGana.toFixed(2)}`, inline: true },
+        { name: "Proveedor recibe", value: `$${proveedorGana.toFixed(2)}`, inline: true }
+      );
+
+      return message.reply({ embeds: [e] });
+    }
+
+    // ================== PURGE ==================
+    if (comando === "c") {
+      const cantidad = parseInt(args[0], 10);
+      if (Number.isNaN(cantidad) || cantidad < 1 || cantidad > 100) {
+        return message.reply(`❌ Uso: \`${PREFIX}c <1-100>\``);
+      }
+
+      if (!message.member?.permissions?.has(PermissionsBitField.Flags.ManageMessages)) {
+        return message.reply("⛔ Necesitas permiso **Manage Messages** para usar este comando.");
+      }
+
+      try {
+        const deleted = await message.channel.bulkDelete(cantidad, true);
+
+        const e = makeEmbed({
+          title: "🧹 Limpieza completada",
+          description: `Se eliminaron **${deleted.size}** mensajes.\n> Nota: Discord no borra mensajes de más de **14 días** con bulkDelete.`,
+          color: 0x57f287,
+        });
+
+        const aviso = await message.channel.send({ embeds: [e] });
+        setTimeout(() => aviso.delete().catch(() => {}), 4000);
+
+      } catch (err) {
+        console.error(err);
+        return message.reply("❌ No pude borrar mensajes (revisa permisos o mensajes muy antiguos).");
+      }
+    }
+  } catch (err) {
+    console.error("Handler error:", err);
+    // Evitar que se caiga por cualquier tontería
+    try { await message.reply("❌ Ocurrió un error ejecutando el comando."); } catch {}
   }
 });
 
-// ================== LOGIN ==================
+// ========= Login (UNA sola vez) =========
 client.login(token);
+
+// ========= Cierre limpio =========
+process.on("SIGINT", () => {
+  try { client.destroy(); } catch {}
+  try { server.close(); } catch {}
+  process.exit(0);
+});
