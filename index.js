@@ -1,4 +1,6 @@
 require('dotenv').config();
+const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
+const express = require("express");
 
 // Capturar errores inesperados
 process.on("unhandledRejection", console.error);
@@ -6,9 +8,9 @@ process.on("uncaughtException", console.error);
 
 console.log("🚀 BOT INICIANDO...");
 
-const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const token = process.env.TOKEN;
 
+// ================== CLIENTE DISCORD ==================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -16,6 +18,19 @@ const client = new Client({
     GatewayIntentBits.MessageContent
   ]
 });
+
+// ================== MINI SERVIDOR WEB ==================
+const app = express();
+app.get("/", (req, res) => res.send("Bot activo!"));
+app.listen(3000, () => console.log("Servidor web iniciado en puerto 3000"));
+
+// ================== LOGIN ==================
+client.login(token);
+
+// ================== MINI SERVIDOR WEB ==================
+const app = express();
+app.get("/", (req, res) => res.send("Bot activo!"));
+app.listen(3000, () => console.log("Servidor web iniciado en puerto 3000"));
 
 
 // ================== PERSONAJES Y FÓRMULAS ================== 
