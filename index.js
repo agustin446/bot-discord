@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
-const { token } = require("./config.json");
+const token = process.env.TOKEN;
 
 const client = new Client({
   intents: [
@@ -476,3 +476,4 @@ else {
 
 // ================== LOGIN ==================
 client.login(token);
+
